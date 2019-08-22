@@ -30,8 +30,40 @@
 		<ConfigUI>
 			<!-- There is one required parameter - the IP address of the device
 			-->
-			<Field id="address" type="textfield" defaultValue="192.168.0.0">
+			<Field id="address" type="textfield" defaultValue="192.168.0.10">
 				<Label>Module IP Address:</Label>
+			</Field>
+		</ConfigUI>
+		<States>
+			<!-- there are no custom states
+			-->
+		</States>
+	</Device>
+
+	<Device type="relay" id="SmartStrip">
+		<Name>SmartStrip</Name>
+		<ConfigUI>
+			<!-- There is one required parameter - the IP address of the device
+			-->
+			<Field id="address" type="textfield" defaultValue="192.168.0.10:1-6">
+				<Label>Module IP Address and Outlet Number:</Label>
+			</Field>
+			<Field type="checkbox" id="SupportsEnergyMeter" defaultValue="true" hidden="true" />
+            <Field type="checkbox" id="SupportsEnergyMeterCurPower" defaultValue="true" hidden="true" />
+		</ConfigUI>
+		<States>
+			<!-- there are no custom states
+			-->
+		</States>
+	</Device>
+
+	<Device type="relay" id="SmartPlugDual">
+		<Name>SmartPlugDual</Name>
+		<ConfigUI>
+			<!-- There is one required parameter - the IP address of the device
+			-->
+			<Field id="address" type="textfield" defaultValue="192.168.0.10:1-2">
+				<Label>Module IP Address and Outlet Number:</Label>
 			</Field>
 		</ConfigUI>
 		<States>
