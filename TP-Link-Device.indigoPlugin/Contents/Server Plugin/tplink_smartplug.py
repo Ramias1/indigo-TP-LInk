@@ -19,7 +19,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# Also incorporates the send_udp code from https://github.com/p-doyle/Python-KasaSmartPowerStrip
+# and the associated decrypt and encrypt functions used for UDP devices.
 
+import json
+import struct
 import socket
 import argparse
 from struct import pack
@@ -64,6 +68,32 @@ def decrypt(string):
 		result += chr(a)
 	return result
 
+# def _encrypt_udp(string, prepend_length=True):
+
+#     key = 171
+#     result = ''
+
+#     # when sending get_sysinfo using udp the length of the command is not needed but
+#     #  with all other commands using tcp it is
+#     if prepend_length:
+#         result = struct.pack('>I', len(string))
+
+#     for i in string:
+#         a = key ^ ord(i)
+#         key = a
+#         result += chr(a)
+#     return result
+
+# def _decrypt_udp(string):
+
+#     key = 171
+#     result = ''
+#     for i in string:
+#         a = key ^ ord(i)
+#         key = ord(i)
+#         result += chr(a)
+#     return result
+
 ########################
 # the class has an optional deviceID string, used by power Strip devices (and others???)
 # and the send command has an optional childID representing the socket on the power Strip
@@ -103,16 +133,59 @@ class tplink_smartplug():
 		try:
 			sock_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			sock_tcp.connect((self.ip, self.port))
-			sock_tcp.send(encrypt(cmd))
-			data = sock_tcp.recv(2048)
-			sock_tcp.close()
-
-			# don't know what the first 3 decrypted bytes are. skip them
-			# Byte 4 is a '?' but for valid json replace it with '{'
-			result = decrypt(data)
-			return '{' + result[5:]
+			sock_tcp.settimeout(2)
 		except socket.error:
 			quit("ERROR: Cound not connect to host " + self.ip + ":" + str(self.port))
+
+		sock_tcp.send(encrypt(cmd))
+
+		data = ""
+		while True:
+			try:
+				new_data = sock_tcp.recv(1024)
+				data = data + new_data
+
+			except socket.timeout:
+				break
+			except socket.error:
+				quit("ERROR: Socket error e: " + str(e))
+
+		sock_tcp.close()
+
+		result = decrypt(data)
+		return '{' + result[5:]
+
+
+	# Send command and receive reply
+	# def send_udp(self, cmd):
+	# 	timeout = 2.0
+	# 	if cmd in commands:
+	# 		cmd = commands[cmd]
+	# 	else:
+	# 		quit("ERROR: unknown command: %s" % (cmd, ))
+
+	# 	# if both deviceID and childID are set, { context... } is prepended to the command
+	# 	if self.deviceID is not None and self.childID is not None:
+	# 		context = '{"context":{"child_ids":["' + self.deviceID + "{:02d}".format(int(self.childID)) +'"]},'
+	# 		# now replace the initial '{' of the command with that string
+	# 		cmd = context + cmd[1:]
+	# 	# note error checking on deviceID and childID is done in __init__
+
+	# 	if debug:
+	# 		print ("send cmd=%s" % (cmd, ))
+
+	# 	client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	# 	client_socket.settimeout(timeout)
+
+	# 	addr = (self.ip, self.port)
+
+	# 	client_socket.sendto(_encrypt_udp(cmd, prepend_length=False), addr)
+
+	# 	data, server = client_socket.recvfrom(1024)
+
+	# 	result = _decrypt_udp(data)
+	# 	client_socket.close()
+	# 	return result
 
 # Check if hostname is valid
 def validHostname(hostname):
